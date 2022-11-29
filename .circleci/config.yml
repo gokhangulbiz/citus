@@ -229,7 +229,7 @@ jobs:
       - run:
           name: 'Test arbitrary configs'
           command: |
-            TESTS=$(src/test/regress/citus_tests/print_test_names.py | circleci tests split)
+            TESTS=$(src/test/regress/citus_tests/print_test_names | circleci tests split)
             # Our test suite expects comma separated values
             TESTS=$(echo $TESTS | tr ' ' ',')
             # TESTS will contain subset of configs that will be run on a container and we use multiple containers
@@ -572,12 +572,13 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: 'Detect newly introduced tests'
+          name: 'Detect regression tests need to be ran'
           command: |
             testForDebugging="<< parameters.test >>"
 
             if [ -z "$testForDebugging" ]; then
-              tests=$(git diff origin/main --name-status --oneline --diff-filter=A | (grep 'src/test/regress/sql/' || true) | rev | cut -d "/" -f1 | rev | sed 's/.sql//g' | tr '\n' ' ' | sed 's/.$//')
+              detected_changes=$(git diff origin/HEAD --name-only | (grep 'src/test/regress/sql/.*.sql\|src/test/regress/spec/.*.spec' || true) | rev | cut -d "/" -f1 | rev | tr '\n' ' ' | sed 's/.$//' )
+              tests=${detected_changes//src\/test\/regress/}
             else
               tests=$testForDebugging;
             fi
@@ -608,8 +609,7 @@ jobs:
             tests_array=($tests)
             for test in "${tests_array[@]}"
             do
-                echo "Running : $test on << parameters.make >>"
-                gosu circleci make -C src/test/regress << parameters.make >> EXTRA_TESTS="$(for i in $(seq << parameters.runs >> | circleci tests split); do echo -n $test '' ; done)"
+                gosu circleci src/test/regress/bin/run-test.py -t $test -n << parameters.runs >> -s << parameters.make >> | circleci tests split
             done
           no_output_timeout: 2m
       - run:
