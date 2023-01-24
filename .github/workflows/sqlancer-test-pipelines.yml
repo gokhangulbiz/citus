@@ -1,0 +1,77 @@
+name: Run sqlancer on release branch
+
+on:
+  push:
+    branches: "**"
+  workflow_dispatch:
+    inputs:
+      timeout:
+        default: 24h
+      citus_release:
+        default: release-11.1
+
+env:
+    timeout: ${{ inputs.timeout }}
+    citus_release: ${{ inputs.citus_release }}
+
+jobs:
+
+  run-sqlancer-test-on-citus:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pg_versions:
+          - 15
+    container:
+      image: citus/packaging:ubuntu-focal-all
+
+    steps:
+      - name: Checkout citus release
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.citus_release}}
+          repository: citusdata/citus
+
+      - name: Set pg_config and initdb path to related Postgres version
+        run: |
+          echo "PG_CONFIG=/usr/lib/postgresql/${{ matrix.pg_versions }}/bin/pg_config" >> $GITHUB_ENV
+          echo "initdb=/usr/lib/postgresql/${{ matrix.pg_versions }}/bin/initdb" >> $GITHUB_ENV
+          echo $(ls /usr/lib/postgresql/${{ matrix.pg_versions }}/bin) >> $GITHUB_STEP_SUMMARY
+
+
+      - name: Configure
+        run: |
+          echo "Current Shell:$0"
+          echo "GCC Version: $(gcc --version)"
+          ./configure 2>&1 | tee output.log
+
+      - name: Make install-all
+        run: |
+          make install-all -sj$(cat /proc/cpuinfo | grep "core id" | wc -l) 2>&1 | tee -a output.log
+
+      - name: Checkout citusdata/tools
+        uses: actions/checkout@v3
+        with:
+          repository: citusdata/tools
+
+      - name: Build citus_dev
+        run: |
+          cd citus_dev
+          pip install -r requirements.txt
+          ./citus_dev make test-cluster
+          cd ../..
+
+      - name: Setup Maven
+        uses: s4u/setup-maven-action@v1.6.0
+
+      - name: Download sqlancer latest release
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: sqlancer/sqlancer
+
+      - name: Run sqlancer
+        run: |
+          echo $(ls)
+          java -jar target/sqlancer-2.0.0.jar --num-threads $(cat /proc/cpuinfo | grep "core id" | wc -l) citus --connection-url postgresql://localhost:9700 --oracle QUERY_PARTITIONING
+
