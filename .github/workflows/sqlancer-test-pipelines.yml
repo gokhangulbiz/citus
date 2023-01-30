@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
     container:
       image: 'citus/extbuilder:15.1-v7e4468f'
-      options: --user root
+      options: --user circleci
 
     steps:
       - name: Set pg_config path
