@@ -63,7 +63,11 @@ jobs:
 
       - name: Build SQLancer
         run: mvn -B package -DskipTests=true
-
+      - name: Switch to unpriviliged user
+        run : |
+          echo $(whoami)
+          su - circleci
+          echo $(whoami)
       - name: Set up Citus cluster
         run: |
           su - circleci
