@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Set pg_config path
         run: |
-          echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
+          sudo echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
 
       - name: Checkout citus release
         uses: actions/checkout@v3
