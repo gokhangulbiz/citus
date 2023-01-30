@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    container:
-      image: 'citus/extbuilder:15.1-v7e4468f'
+    # container:
+    #   image: 'citus/extbuilder:15.1-v7e4468f'
 
     steps:
       - name: Set pg_config path
