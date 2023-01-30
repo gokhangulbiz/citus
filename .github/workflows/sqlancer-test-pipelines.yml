@@ -66,6 +66,7 @@ jobs:
 
       - name: Set up Citus cluster
         run: |
+          su - circleci
           cd ~
           mkdir -p citus/coordinator citus/worker1 citus/worker2
           initdb -D citus/coordinator
