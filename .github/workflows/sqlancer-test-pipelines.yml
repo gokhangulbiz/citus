@@ -11,15 +11,17 @@ on:
       default: '-v7e4468f'
 
 env:
-    timeout: ${{ inputs.timeout }}
-    citus_release: ${{ inputs.citus_release }}
+  timeout: ${{ inputs.timeout }}
+  citus_release: ${{ inputs.citus_release }}
 
 jobs:
 
   run-sqlancer-test-on-citus:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
     container:
-      image: citus/extbuilder:15.1-v7e4468f
+      image: 'citus/extbuilder:15.1-v7e4468f'
 
     steps:
       - name: Set pg_config path
@@ -56,7 +58,7 @@ jobs:
       - name: Build SQLancer
         run: mvn -B package -DskipTests=true
 
-       - name: Set up Citus cluster
+      - name: Set up Citus cluster
         run: |
           cd ~
           mkdir -p citus/coordinator citus/worker1 citus/worker2
@@ -81,5 +83,6 @@ jobs:
           psql -c "CREATE EXTENSION citus;" -p 9702 -U $USER -d test
           psql -c "SELECT * from citus_add_node('localhost', 9701);" -p 9700 -U $USER -d test
           psql -c "SELECT * from citus_add_node('localhost', 9702);" -p 9700 -U $USER -d test
+
       - name: Run Tests
         run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
