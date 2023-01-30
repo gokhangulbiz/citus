@@ -5,10 +5,10 @@ on:
     branches: "**"
   workflow_dispatch:
     inputs:
-      timeout:
-        default: 24h
       citus_release:
         default: release-11.1
+    image_suffix:
+      default: '-v7e4468f'
 
 env:
     timeout: ${{ inputs.timeout }}
@@ -18,27 +18,19 @@ jobs:
 
   run-sqlancer-test-on-citus:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        pg_versions:
-          - 15
     container:
-      image: citus/packaging:ubuntu-focal-all
+      image: citus/extbuilder:15.1-v7e4468f
 
     steps:
+      - name: Set pg_config path
+        run: |
+          echo "PG_CONFIG=/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
+
       - name: Checkout citus release
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.citus_release}}
+          ref: ${{ inputs.citus_release }}
           repository: citusdata/citus
-
-      - name: Set pg_config and initdb path to related Postgres version
-        run: |
-          echo "PG_CONFIG=/usr/lib/postgresql/${{ matrix.pg_versions }}/bin/pg_config" >> $GITHUB_ENV
-          echo "initdb=/usr/lib/postgresql/${{ matrix.pg_versions }}/bin/initdb" >> $GITHUB_ENV
-          echo $(ls /usr/lib/postgresql/${{ matrix.pg_versions }}/bin) >> $GITHUB_STEP_SUMMARY
-
 
       - name: Configure
         run: |
@@ -50,28 +42,44 @@ jobs:
         run: |
           make install-all -sj$(cat /proc/cpuinfo | grep "core id" | wc -l) 2>&1 | tee -a output.log
 
-      - name: Checkout citusdata/tools
+      - name: Checkout Sqlancer
         uses: actions/checkout@v3
         with:
-          repository: citusdata/tools
-
-      - name: Build citus_dev
-        run: |
-          cd citus_dev
-          pip install -r requirements.txt
-          ./citus_dev make test-cluster
-          cd ../..
-
-      - name: Setup Maven
-        uses: s4u/setup-maven-action@v1.6.0
-
-      - name: Download sqlancer latest release
-        uses: robinraju/release-downloader@v1.7
-        with:
+          ref: master
           repository: sqlancer/sqlancer
 
-      - name: Run sqlancer
-        run: |
-          echo $(ls)
-          java -jar target/sqlancer-2.0.0.jar --num-threads $(cat /proc/cpuinfo | grep "core id" | wc -l) citus --connection-url postgresql://localhost:9700 --oracle QUERY_PARTITIONING
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
 
+      - name: Build SQLancer
+        run: mvn -B package -DskipTests=true
+
+       - name: Set up Citus cluster
+        run: |
+          cd ~
+          mkdir -p citus/coordinator citus/worker1 citus/worker2
+          initdb -D citus/coordinator
+          initdb -D citus/worker1
+          initdb -D citus/worker2
+          echo "shared_preload_libraries = 'citus'" >> citus/coordinator/postgresql.conf
+          echo "shared_preload_libraries = 'citus'" >> citus/worker1/postgresql.conf
+          echo "shared_preload_libraries = 'citus'" >> citus/worker2/postgresql.conf
+          pg_ctl -D citus/coordinator -o "-p 9700" -l coordinator_logfile start || cat coordinator_logfile || cat citus/coordinator/coordinator_logfile
+          pg_ctl -D citus/worker1 -o "-p 9701" -l worker1_logfile start
+          ls citus/worker1
+          pg_ctl -D citus/worker2 -o "-p 9702" -l worker2_logfile start
+          psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9700 -d postgres -U $USER
+          createdb test -p 9700 -U $USER
+          psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9701 -d postgres -U $USER
+          createdb test -p 9701 -U $USER
+          psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9702 -d postgres -U $USER
+          createdb test -p 9702 -U $USER
+          psql -c "CREATE EXTENSION citus;" -p 9700 -U $USER -d test
+          psql -c "CREATE EXTENSION citus;" -p 9701 -U $USER -d test
+          psql -c "CREATE EXTENSION citus;" -p 9702 -U $USER -d test
+          psql -c "SELECT * from citus_add_node('localhost', 9701);" -p 9700 -U $USER -d test
+          psql -c "SELECT * from citus_add_node('localhost', 9702);" -p 9700 -U $USER -d test
+      - name: Run Tests
+        run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
