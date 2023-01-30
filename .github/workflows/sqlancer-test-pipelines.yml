@@ -14,6 +14,11 @@ env:
   timeout: ${{ inputs.timeout }}
   citus_release: ${{ inputs.citus_release }}
 
+defaults:
+  run:
+    shell: bash
+    working-directory: scripts
+
 jobs:
 
   run-sqlancer-test-on-citus:
@@ -22,7 +27,6 @@ jobs:
       fail-fast: false
     container:
       image: 'citus/extbuilder:15.1-v7e4468f'
-      options: --user circleci
 
     steps:
       - name: Set pg_config path
