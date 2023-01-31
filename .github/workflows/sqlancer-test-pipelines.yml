@@ -27,9 +27,9 @@ jobs:
     #   image: 'citus/extbuilder:15.1-v7e4468f'
 
     steps:
-     - name: install pg 15.1
+      - name: install pg 15.1
         run: |
-          sudo apt-install postgresql-15 --yes
+          sudo apt-get -y install postgresql-15
 
       - name: Set pg_config path
         run: |
