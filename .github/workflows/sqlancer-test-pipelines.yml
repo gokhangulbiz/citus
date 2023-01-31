@@ -23,47 +23,47 @@ jobs:
     runs-on: ubuntu-latest
     # strategy:
     #   fail-fast: false
-    # container:
-    #   image: 'citus/packaging:ubuntu-focal-all'
+    container:
+      image: 'citus/exttester:15.1-dev-895be1f'
 
     steps:
-      - name: install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install --no-install-recommends \
-            apt-transport-https \
-            autoconf \
-            build-essential \
-            ca-certificates \
-            curl \
-            debian-archive-keyring \
-            gcc \
-            gnupg \
-            gosu \
-            libcurl4 \
-            libcurl4-openssl-dev \
-            libicu-dev \
-            liblz4-1 \
-            liblz4-dev \
-            libreadline-dev \
-            libselinux1-dev \
-            libssl-dev \
-            libxslt-dev \
-            libzstd-dev \
-            libzstd1 \
-            locales \
-            make \
-            perl \
-      - name: install pg 15.1
-        run: |
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-          sudo apt-get update
-          sudo apt-get -y install postgresql-15
+      # - name: install dependencies
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get -y install --no-install-recommends \
+      #       apt-transport-https \
+      #       autoconf \
+      #       build-essential \
+      #       ca-certificates \
+      #       curl \
+      #       debian-archive-keyring \
+      #       gcc \
+      #       gnupg \
+      #       gosu \
+      #       libcurl4 \
+      #       libcurl4-openssl-dev \
+      #       libicu-dev \
+      #       liblz4-1 \
+      #       liblz4-dev \
+      #       libreadline-dev \
+      #       libselinux1-dev \
+      #       libssl-dev \
+      #       libxslt-dev \
+      #       libzstd-dev \
+      #       libzstd1 \
+      #       locales \
+      #       make \
+      #       perl \
+      # - name: install pg 15.1
+      #   run: |
+      #     sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+      #     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+      #     sudo apt-get update
+      #     sudo apt-get -y install postgresql-15
 
-      - name: Set pg bin path
-        run: |
-          echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
+      # - name: Set pg bin path
+      #   run: |
+      #     echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
 
       - name: Checkout citus release
         uses: actions/checkout@v3
