@@ -97,8 +97,8 @@ jobs:
         run: mvn -B package -DskipTests=true
 
       - name: Set up Citus cluster
-          mkdir -p citus/coordinator citus/worker1 citus/worker2
         run: |
+          gosu mkdir -p citus/coordinator citus/worker1 citus/worker2
           gosu circleci initdb -D citus/coordinator
           gosu circleci initdb -D citus/worker1
           gosu circleci initdb -D citus/worker2
