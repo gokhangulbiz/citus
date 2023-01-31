@@ -25,7 +25,7 @@ jobs:
     #   fail-fast: false
     container:
       image: 'citus/exttester:15.1-dev-895be1f'
-      options: --user circleci
+      #options: --user circleci
 
     steps:
       # - name: install dependencies
@@ -65,7 +65,12 @@ jobs:
       # - name: Set pg bin path
       #   run: |
       #     echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
-
+      - name: Set up Citus cluster
+        run: |
+          mkdir -p citus/coordinator citus/worker1 citus/worker2
+          gosu circleci initdb -D citus/coordinator
+          gosu circleci initdb -D citus/worker1
+          gosu circleci initdb -D citus/worker2
       - name: Checkout citus release
         uses: actions/checkout@v3
         with:
