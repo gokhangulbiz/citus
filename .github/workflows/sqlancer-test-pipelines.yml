@@ -65,6 +65,12 @@ jobs:
       #   run: |
       #     echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
 
+      - name: Set up Citus cluster
+        run: |
+          su - circleci
+          mkdir -p citus/coordinator citus/worker1 citus/worker2
+          initdb -D citus/coordinator
+
       - name: Checkout citus release
         uses: actions/checkout@v3
         with:
@@ -97,7 +103,7 @@ jobs:
 
       - name: Set up Citus cluster
         run: |
-          su - postgres
+          su - circleci
           mkdir -p citus/coordinator citus/worker1 citus/worker2
           initdb -D citus/coordinator
           initdb -D citus/worker1
