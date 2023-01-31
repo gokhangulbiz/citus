@@ -25,6 +25,7 @@ jobs:
     #   fail-fast: false
     container:
       image: 'citus/exttester:15.1-dev-895be1f'
+      options: --user circleci
 
     steps:
       # - name: install dependencies
