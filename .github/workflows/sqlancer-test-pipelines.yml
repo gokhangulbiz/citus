@@ -29,6 +29,7 @@ jobs:
     steps:
       - name: install pg 15.1
         run: |
+          sudo apt update
           sudo apt-get -y install postgresql-15
 
       - name: Set pg_config path
