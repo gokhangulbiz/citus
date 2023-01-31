@@ -97,6 +97,7 @@ jobs:
 
       - name: Set up Citus cluster
         run: |
+          su - postgres
           mkdir -p citus/coordinator citus/worker1 citus/worker2
           initdb -D citus/coordinator
           initdb -D citus/worker1
