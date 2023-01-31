@@ -21,18 +21,18 @@ jobs:
 
   run-sqlancer-test-on-citus:
     runs-on: ubuntu-latest
-    # strategy:
-    #   fail-fast: false
-    # container:
-    #   image: 'citus/extbuilder:15.1-v7e4468f'
+    strategy:
+      fail-fast: false
+    container:
+      image: 'citus/packaging:ubuntu-focal-all'
 
     steps:
-      - name: install pg 15.1
-        run: |
-          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-          sudo apt-get update
-          sudo apt-get -y install postgresql-15
+      # - name: install pg 15.1
+      #   run: |
+      #     sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+      #     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+      #     sudo apt-get update
+      #     sudo apt-get -y install postgresql-15
 
       - name: Set pg_config path
         run: |
