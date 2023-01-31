@@ -7,28 +7,30 @@ on:
     inputs:
       citus_release:
         default: release-11.1
-    image_suffix:
-      default: '-v7e4468f'
 
 env:
   timeout: ${{ inputs.timeout }}
   citus_release: ${{ inputs.citus_release }}
 
-defaults:
-  run:
-    shell: bash
-    working-directory: /home/circleci
+# defaults:
+#   run:
+#     shell: bash
+#     working-directory: /home/circleci
 
 jobs:
 
   run-sqlancer-test-on-citus:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    container:
-      image: 'citus/extbuilder:15.1-v7e4468f'
+    # strategy:
+    #   fail-fast: false
+    # container:
+    #   image: 'citus/extbuilder:15.1-v7e4468f'
 
     steps:
+     - name: install pg 15.1
+        run: |
+          sudo apt-install postgresql-15 --yes
+
       - name: Set pg_config path
         run: |
           echo "/usr/lib/postgresql/15/bin" >> $GITHUB_PATH
@@ -49,7 +51,7 @@ jobs:
         run: |
           make install-all -sj$(cat /proc/cpuinfo | grep "core id" | wc -l) 2>&1 | tee -a output.log
 
-      - name: Setup Maven Action
+      - name: Setup Maven
         uses: s4u/setup-maven-action@v1.6.0
         with:
           java-version: 11
@@ -60,22 +62,11 @@ jobs:
           ref: master
           repository: sqlancer/sqlancer
 
-      # - name: Set up JDK 11
-      #   uses: actions/setup-java@v1
-      #   with:
-      #     java-version: 11
-
       - name: Build SQLancer
         run: mvn -B package -DskipTests=true
-      - name: Switch to unpriviliged user
-        run : |
-          echo $(whoami)
-          su - circleci
-          echo $(whoami)
+
       - name: Set up Citus cluster
         run: |
-          su - circleci
-          cd ~
           mkdir -p citus/coordinator citus/worker1 citus/worker2
           initdb -D citus/coordinator
           initdb -D citus/worker1
