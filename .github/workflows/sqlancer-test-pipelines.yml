@@ -124,3 +124,6 @@ jobs:
 
       - name: Run Tests
         run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
+
+      - name: Publish Test Report
+        uses: scacap/action-surefire-report@v1
