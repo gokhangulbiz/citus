@@ -126,4 +126,5 @@ jobs:
         run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
 
       - name: Publish Test Report
+        if: ${{ always() }}
         uses: scacap/action-surefire-report@v1
