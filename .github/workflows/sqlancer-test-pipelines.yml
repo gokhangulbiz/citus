@@ -36,19 +36,19 @@ jobs:
         run: |
           make install-all -sj$(cat /proc/cpuinfo | grep "core id" | wc -l) 2>&1 | tee -a output.log
 
-      - name: Setup Maven
-        uses: s4u/setup-maven-action@v1.6.0
-        with:
-          java-version: 11
+      # - name: Setup Maven
+      #   uses: s4u/setup-maven-action@v1.6.0
+      #   with:
+      #     java-version: 11
 
-      - name: Checkout Sqlancer
-        uses: actions/checkout@v3
-        with:
-          ref: master
-          repository: sqlancer/sqlancer
+      # - name: Checkout Sqlancer
+      #   uses: actions/checkout@v3
+      #   with:
+      #     ref: master
+      #     repository: sqlancer/sqlancer
 
-      - name: Build SQLancer
-        run: mvn -B package -DskipTests=true
+      # - name: Build SQLancer
+      #   run: mvn -B package -DskipTests=true
 
       - name: Set up Citus cluster
         run: |
@@ -76,12 +76,20 @@ jobs:
           gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9701);" -p 9700 -d test
           gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9702);" -p 9700 -d test
 
-      - name: Run Tests
-        run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
+      - name: Download sqlancer
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: 'sqlancer/sqlancer'
+          version: 'tags/v2.0.0'
+          file: 'sqlancer-2.0.0.jar'
 
-      - name: Publish Test Report
-        if: ${{ always() }}
-        uses: scacap/action-surefire-report@v1
+      - name: Run Tests
+        run: java -jar sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://circleci@localhost:9700/test --oracle QUERY_PARTITIONING
+        # run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
+
+      # - name: Publish Test Report
+      #   if: ${{ always() }}
+      #   uses: scacap/action-surefire-report@v1
 
       - name: Publish Logs
         if: ${{ always() }}
