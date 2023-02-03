@@ -77,7 +77,7 @@ jobs:
         run: mvn -B package -DskipTests=true
 
       - name: Run Tests
-        run: java -jar target/sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://circleci@localhost:9700/test --oracle QUERY_PARTITIONING
+        run: gosu circleci java -jar target/sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://circleci@localhost:9700/test --oracle QUERY_PARTITIONING
         # run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
 
       # - name: Publish Test Report
@@ -89,4 +89,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: logs
-          path:  /**/*.log
+          path:  logs/*.log
