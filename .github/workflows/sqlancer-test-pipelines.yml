@@ -77,10 +77,9 @@ jobs:
 
       - name: Run Tests
         run: |
-          echo $timeout
           mkdir /__w/citus/citus/logs/citus
           chown -R circleci:circleci /__w/citus/citus/logs/citus
-          gosu timeout $timeout gosu circleci java -jar target/sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://circleci@localhost:9700/test --oracle QUERY_PARTITIONING
+          gosu circleci timeout 5m gosu circleci java -jar target/sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://circleci@localhost:9700/test --oracle QUERY_PARTITIONING
 
       - name: Publish Logs
         if: ${{ always() }}
