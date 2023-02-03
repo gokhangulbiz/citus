@@ -41,7 +41,7 @@ jobs:
       - name: Set up Citus cluster
         run: |
           mkdir -p citus/coordinator citus/worker1 citus/worker2
-          gosu circleci chown -R circleci:circleci /__w/citus
+          chown -R circleci:circleci /__w/citus
           gosu circleci initdb -D citus/coordinator
           gosu circleci initdb -D citus/worker1
           gosu circleci initdb -D citus/worker2
