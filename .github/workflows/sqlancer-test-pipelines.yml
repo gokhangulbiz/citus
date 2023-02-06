@@ -92,4 +92,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: logs
-          path:  /__w/citus/citus
+          path:  citus/target
