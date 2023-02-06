@@ -92,6 +92,7 @@ jobs:
             citus/worker2_logfile
 
       - name: Publish Summary
+        if: ${{ always() }}
         run: |
           declare -A errors_table
 
