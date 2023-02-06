@@ -38,54 +38,54 @@ jobs:
         run: |
           make install-all -sj$(cat /proc/cpuinfo | grep "core id" | wc -l) 2>&1 | tee -a output.log
 
-      - name: Set up Citus cluster
-        run: |
-          mkdir -p citus/coordinator citus/worker1 citus/worker2
-          chown -R circleci:circleci citus
-          gosu circleci initdb -D citus/coordinator
-          gosu circleci initdb -D citus/worker1
-          gosu circleci initdb -D citus/worker2
-          gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/coordinator/postgresql.conf
-          gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/worker1/postgresql.conf
-          gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/worker2/postgresql.conf
-          gosu circleci pg_ctl -D citus/coordinator -o "-p 9700" -l citus/coordinator_logfile start
-          gosu circleci pg_ctl -D citus/worker1 -o "-p 9701" -l citus/worker1_logfile start
-          gosu circleci ls citus/worker1
-          gosu circleci pg_ctl -D citus/worker2 -o "-p 9702" -l citus/worker2_logfile start
-          gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB;" -p 9700 -d postgres
-          gosu circleci createdb test -p 9700
-          gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB;" -p 9701 -d postgres
-          gosu circleci createdb test -p 9701
-          gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB;" -p 9702 -d postgres
-          gosu circleci createdb test -p 9702
-          gosu circleci psql -c "CREATE EXTENSION citus;" -p 9700 -d test
-          gosu circleci psql -c "CREATE EXTENSION citus;" -p 9701 -d test
-          gosu circleci psql -c "CREATE EXTENSION citus;" -p 9702 -d test
-          gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9701);" -p 9700 -d test
-          gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9702);" -p 9700 -d test
-
-      - name: Setup Maven
+    - name: Setup Maven
         uses: s4u/setup-maven-action@v1.6.0
         with:
           java-version: 11
 
-      - name: Checkout Sqlancer
-        uses: actions/checkout@v3
-        with:
-          ref: master
-          repository: sqlancer/sqlancer
+    - name: Checkout Sqlancer
+      uses: actions/checkout@v3
+      with:
+        ref: master
+        repository: sqlancer/sqlancer
 
-      - name: Build SQLancer
-        run: mvn -B package -DskipTests=true
+    - name: Build SQLancer
+      run: mvn -B package -DskipTests=true
+
+    - name: Set up Citus cluster
+      run: |
+        mkdir -p citus/coordinator citus/worker1 citus/worker2
+        chown -R circleci:circleci citus
+        gosu circleci initdb -D citus/coordinator
+        gosu circleci initdb -D citus/worker1
+        gosu circleci initdb -D citus/worker2
+        gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/coordinator/postgresql.conf
+        gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/worker1/postgresql.conf
+        gosu circleci echo "shared_preload_libraries = 'citus'" >> citus/worker2/postgresql.conf
+        gosu circleci pg_ctl -D citus/coordinator -o "-p 9700" -l citus/coordinator_logfile start
+        gosu circleci pg_ctl -D citus/worker1 -o "-p 9701" -l citus/worker1_logfile start
+        gosu circleci ls citus/worker1
+        gosu circleci pg_ctl -D citus/worker2 -o "-p 9702" -l citus/worker2_logfile start
+        gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9700 -d postgres
+        gosu circleci createdb test -p 9700
+        gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9701 -d postgres
+        gosu circleci createdb test -p 9701
+        gosu circleci psql -c "CREATE ROLE sqlancer SUPERUSER LOGIN CREATEDB PASSWORD 'sqlancer';" -p 9702 -d postgres
+        gosu circleci createdb test -p 9702
+        gosu circleci psql -c "CREATE EXTENSION citus;" -p 9700 -d test
+        gosu circleci psql -c "CREATE EXTENSION citus;" -p 9701 -d test
+        gosu circleci psql -c "CREATE EXTENSION citus;" -p 9702 -d test
+        gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9701);" -p 9700 -d test
+        gosu circleci psql -c "SELECT * from citus_add_node('localhost', 9702);" -p 9700 -d test
+    - name: Run Tests
+      run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
+
 
       # - name: Run Tests
       #   run: |
       #     mkdir /__w/citus/citus/logs/citus
       #     chown -R circleci:circleci /__w/citus/citus/logs/citus
       #     gosu circleci java -jar target/sqlancer-2.0.0.jar --num-threads 4 citus --connection-url postgresql://sqlancer@localhost:9700/test --oracle QUERY_PARTITIONING
-
-      - name: Run Tests
-        run: CITUS_AVAILABLE=true mvn -Dtest=TestCitus test
 
       - name: Publish Logs
         if: ${{ always() }}
