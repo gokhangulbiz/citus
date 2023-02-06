@@ -90,3 +90,30 @@ jobs:
             citus/coordinator_logfile
             citus/worker1_logfile
             citus/worker2_logfile
+
+      - name: Publish Summary
+        run: |
+          declare -A errors_table
+
+          while read line
+          do
+              IFS=':'
+              read -a delimitedArr <<< "$line"
+
+              file=${delimitedArr[0]}
+              category=${delimitedArr[2]}
+              error=${delimitedArr[3]}
+
+              if [[ -z "${errors_table[$error]}" ]]
+              then
+                  errors_table["$error"]="$file "
+              else
+                  errors_table["$error"]="${errors_table[$error]} $file "
+              fi
+
+          done < <(grep -noR "ERROR:.*" logs/citus)
+
+          for key in "${!errors_table[@]}"; do
+              echo "### $key" >> $GITHUB_STEP_SUMMARY
+              echo "${errors_table[$key]}"  >> $GITHUB_STEP_SUMMARY
+          done
